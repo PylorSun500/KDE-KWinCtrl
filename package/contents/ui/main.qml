@@ -12,12 +12,21 @@ PlasmoidItem {
         id: tasksModel
     }
 
-    // ── Compact view: single close button ──
-    compactRepresentation: PC.ToolButton {
-        icon.name: "window-close"
-        onClicked: {
-            console.log("[KWinCtrl] close triggered, activeTask:", tasksModel.activeTask)
-            tasksModel.requestClose(tasksModel.activeTask)
+    // ── Compact view: minimize / maximize / close ──
+    compactRepresentation: Row {
+        spacing: 2
+
+        PC.ToolButton {
+            icon.name: "window-minimize"
+            onClicked: tasksModel.requestToggleMinimized(tasksModel.activeTask)
+        }
+        PC.ToolButton {
+            icon.name: "window-maximize"
+            onClicked: tasksModel.requestToggleMaximized(tasksModel.activeTask)
+        }
+        PC.ToolButton {
+            icon.name: "window-close"
+            onClicked: tasksModel.requestClose(tasksModel.activeTask)
         }
     }
 
