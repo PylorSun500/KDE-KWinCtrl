@@ -25,6 +25,11 @@ PlasmoidItem {
         id: tasksModel
     }
 
+    // ── Expand / collapse ──
+    function toggleExpand() {
+        expanded = !expanded
+    }
+
     // ── Helper: read window state role ──
     function isOn(role) {
         var idx = tasksModel.activeTask
@@ -75,7 +80,7 @@ PlasmoidItem {
             display: PC.ToolButton.IconOnly
             height: parent.height
             width: height
-            onClicked: plasmoid.expanded = !plasmoid.expanded
+            onClicked: root.toggleExpand()
         }
     }
 
@@ -107,7 +112,7 @@ PlasmoidItem {
             id: sep
             anchors { left: parent.left; right: parent.right; top: headerRow.bottom }
             height: 1
-            color: PlasmaCore.Theme.textColor
+            color: Kirigami.Theme.textColor
             opacity: 0.15
         }
 
