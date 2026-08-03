@@ -1,0 +1,83 @@
+#!/usr/bin/env python3
+"""
+KWinCtrl Bridge — Tiny D-Bus service that relays commands from the Plasmoid.
+
+Receives:  execute(action)  via D-Bus (org.kde.kwinctrl.bridge /Bridge)
+Dispatches: Uses ydotool to simulate keyboard shortcuts (evdev input layer).
+            Requires ydotoold daemon running in the background.
+            ydotool works below the compositor — no Wayland protocol needed.
+
+Keycodes (evdev):
+  KEY_LEFTALT  = 56
+  KEY_F4       = 62
+  KEY_F10      = 68
+  KEY_SPACE    = 57
+  KEY_N        = 49
+"""
+
+import subprocess
+import sys
+
+from gi.repository import GLib
+import dbus
+import dbus.service
+from dbus.mainloop.glib import DBusGMainLoop
+
+DBusGMainLoop(set_as_default=True)
+
+BUS_NAME = "org.kde.kwinctrl.bridge"
+OBJECT_PATH = "/Bridge"
+
+
+class BridgeService(dbus.service.Object):
+    def __init__(self):
+        bus = dbus.SessionBus()
+        bus_name = dbus.service.BusName(BUS_NAME, bus)
+        super().__init__(bus_name, OBJECT_PATH)
+
+    @dbus.service.method(BUS_NAME, in_signature="s", out_signature="s")
+    def execute(self, action):
+        if action == "close":
+            # Alt+F4 → universal "Close Window" shortcut
+            self._key_combo(56, 62)
+            print("[kwinctrl-bridge] close → Alt+F4")
+            return "ok"
+        elif action == "maximize":
+            # Alt+F10 → maximize/restore
+            self._key_combo(56, 68)
+            print("[kwinctrl-bridge] maximize → Alt+F10")
+            return "ok"
+        elif action == "minimize":
+            # Alt+Space → window menu
+            self._key_combo(56, 57)
+            # Then 'n' → minimize (in most window menus)
+            self._key_press(49)
+            print("[kwinctrl-bridge] minimize → Alt+Space, n")
+            return "ok"
+        else:
+            print(f"[kwinctrl-bridge] unknown action: {action}")
+            return "unknown_action"
+
+    def _key_combo(self, mod, key):
+        """Send a modifier+key combination."""
+        subprocess.run(
+            ["ydotool", "key",
+             f"{mod}:1", f"{key}:1",
+             f"{key}:0", f"{mod}:0"],
+            check=False)
+
+    def _key_press(self, key):
+        """Send a single key press+release."""
+        subprocess.run(
+            ["ydotool", "key", f"{key}:1", f"{key}:0"],
+            check=False)
+
+
+if __name__ == "__main__":
+    print(f"[kwinctrl-bridge] Starting on {BUS_NAME} {OBJECT_PATH}")
+    service = BridgeService()
+    try:
+        GLib.MainLoop().run()
+    except KeyboardInterrupt:
+        print("[kwinctrl-bridge] Stopped")
+        sys.exit(0)
