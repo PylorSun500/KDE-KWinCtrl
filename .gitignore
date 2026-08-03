@@ -1,0 +1,27 @@
+# QML cache
+*.qmlc
+
+# KDE package tool artifacts
+*.kwinscript
+*.plasmoid
+
+# Backup files
+*~
+*.bak
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.kate-swp
+
+# Docs
+FINAL_FANTASY.md
+KNOWLEDGE_BASE.md
+TECH_DECISIONS.md
+
+

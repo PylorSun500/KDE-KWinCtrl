@@ -1,0 +1,21 @@
+{
+    "KPlugin": {
+        "Id": "org.kde.kwinctrl",
+        "Name": "KWinCtrl",
+        "Name[zh_CN]": "窗口控制器",
+        "Version": "0.1.0",
+        "Category": "System Information",
+        "Icon": "window",
+        "Description": "Panel-based window control buttons for the active window",
+        "Description[zh_CN]": "在面板上控制当前活动窗口的按钮组",
+        "Authors": [
+            {
+                "Name": "pylorsun",
+                "Email": ""
+            }
+        ],
+        "EnabledByDefault": true
+    },
+    "KPackageStructure": "Plasma/Applet",
+    "X-Plasma-API-Minimum-Version": "6.0"
+}

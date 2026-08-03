@@ -1,0 +1,21 @@
+{
+    "KPlugin": {
+        "Id": "org.kde.kwinctrl",
+        "Name": "KWinCtrl Backend",
+        "Name[zh_CN]": "窗口控制器后端",
+        "Version": "0.1.0",
+        "Category": "System",
+        "Icon": "window",
+        "Description": "Window control backend for the KWinCtrl Plasmoid",
+        "Description[zh_CN]": "为 KWinCtrl 小组件提供窗口控制逻辑",
+        "Authors": [
+            {
+                "Name": "pylorsun",
+                "Email": ""
+            }
+        ]
+    },
+    "KPackageStructure": "KWin/Script",
+    "X-Plasma-API": "javascript",
+    "X-Plasma-API-Minimum-Version": "6.0"
+}
