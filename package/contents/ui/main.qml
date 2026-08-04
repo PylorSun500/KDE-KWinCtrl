@@ -83,8 +83,8 @@ PlasmoidItem {
 
     // ── Full view ──
     fullRepresentation: Item {
-        implicitWidth: 240
-        implicitHeight: headerRow.height + 1 + actionCol.height + 16
+        implicitWidth: 220
+        implicitHeight: headerRow.height + 1 + actionCol.height + 12
 
         // Header
         RowLayout {
@@ -113,94 +113,87 @@ PlasmoidItem {
             opacity: 0.15
         }
 
-        // Action list — use savedActiveTask so actions work even when popup has focus
+        // Action list — vertical ToolButtons, same style as compact view
         Column {
             id: actionCol
             anchors { left: parent.left; right: parent.right; top: sep.bottom }
 
-            RowAction {
-                label: "关闭窗口"
-                onTriggered: tasksModel.requestClose(root.savedActiveTask)
+            PC.ToolButton {
+                width: parent.width
+                text: "关闭窗口"
+                icon.name: "window-close"
+                display: PC.ToolButton.TextBesideIcon
+                onClicked: tasksModel.requestClose(root.savedActiveTask)
             }
-            RowAction {
-                label: "最小化"
-                onTriggered: tasksModel.requestToggleMinimized(root.savedActiveTask)
+            PC.ToolButton {
+                width: parent.width
+                text: "最小化"
+                icon.name: "window-minimize"
+                display: PC.ToolButton.TextBesideIcon
+                onClicked: tasksModel.requestToggleMinimized(root.savedActiveTask)
             }
-            RowAction {
-                label: "最大化"
-                onTriggered: tasksModel.requestToggleMaximized(root.savedActiveTask)
+            PC.ToolButton {
+                width: parent.width
+                text: "最大化"
+                icon.name: "window-maximize"
+                display: PC.ToolButton.TextBesideIcon
+                onClicked: tasksModel.requestToggleMaximized(root.savedActiveTask)
             }
 
-            ToggleAction {
-                label: "全屏"
-                toggled: { root.savedActiveTask; return root.isOn(TM.TasksModel.IsFullScreen) }
-                onTriggered: tasksModel.requestToggleFullScreen(root.savedActiveTask)
+            PC.ToolButton {
+                width: parent.width
+                text: "全屏"
+                icon.name: "view-fullscreen"
+                display: PC.ToolButton.TextBesideIcon
+                checkable: true
+                checked: { root.savedActiveTask; return root.isOn(TM.TasksModel.IsFullScreen) }
+                onToggled: tasksModel.requestToggleFullScreen(root.savedActiveTask)
             }
-            ToggleAction {
-                label: "保持在其他窗口上方"
-                toggled: { root.savedActiveTask; return root.isOn(TM.TasksModel.IsKeepAbove) }
-                onTriggered: tasksModel.requestToggleKeepAbove(root.savedActiveTask)
+            PC.ToolButton {
+                width: parent.width
+                text: "保持在其他窗口上方"
+                icon.name: "window-keep-above"
+                display: PC.ToolButton.TextBesideIcon
+                checkable: true
+                checked: { root.savedActiveTask; return root.isOn(TM.TasksModel.IsKeepAbove) }
+                onToggled: tasksModel.requestToggleKeepAbove(root.savedActiveTask)
             }
-            ToggleAction {
-                label: "保持在底层"
-                toggled: { root.savedActiveTask; return root.isOn(TM.TasksModel.IsKeepBelow) }
-                onTriggered: tasksModel.requestToggleKeepBelow(root.savedActiveTask)
+            PC.ToolButton {
+                width: parent.width
+                text: "保持在底层"
+                icon.name: "window-keep-below"
+                display: PC.ToolButton.TextBesideIcon
+                checkable: true
+                checked: { root.savedActiveTask; return root.isOn(TM.TasksModel.IsKeepBelow) }
+                onToggled: tasksModel.requestToggleKeepBelow(root.savedActiveTask)
             }
-            ToggleAction {
-                label: "卷起"
-                toggled: { root.savedActiveTask; return root.isOn(TM.TasksModel.IsShaded) }
-                onTriggered: tasksModel.requestToggleShaded(root.savedActiveTask)
+            PC.ToolButton {
+                width: parent.width
+                text: "卷起"
+                icon.name: "window-shade"
+                display: PC.ToolButton.TextBesideIcon
+                checkable: true
+                checked: { root.savedActiveTask; return root.isOn(TM.TasksModel.IsShaded) }
+                onToggled: tasksModel.requestToggleShaded(root.savedActiveTask)
             }
-            ToggleAction {
-                label: "无边框"
-                toggled: { root.savedActiveTask; return root.isOn(TM.TasksModel.HasNoBorder) }
-                onTriggered: tasksModel.requestToggleNoBorder(root.savedActiveTask)
+            PC.ToolButton {
+                width: parent.width
+                text: "无边框"
+                icon.name: "window-noborder"
+                display: PC.ToolButton.TextBesideIcon
+                checkable: true
+                checked: { root.savedActiveTask; return root.isOn(TM.TasksModel.HasNoBorder) }
+                onToggled: tasksModel.requestToggleNoBorder(root.savedActiveTask)
             }
-            ToggleAction {
-                label: "在截图与录屏中隐藏"
-                toggled: { root.savedActiveTask; return root.isOn(TM.TasksModel.IsExcludedFromCapture) }
-                onTriggered: tasksModel.requestToggleExcludeFromCapture(root.savedActiveTask)
+            PC.ToolButton {
+                width: parent.width
+                text: "在截图与录屏中隐藏"
+                icon.name: "window-hide-capture"
+                display: PC.ToolButton.TextBesideIcon
+                checkable: true
+                checked: { root.savedActiveTask; return root.isOn(TM.TasksModel.IsExcludedFromCapture) }
+                onToggled: tasksModel.requestToggleExcludeFromCapture(root.savedActiveTask)
             }
         }
-    }
-
-    // ── Delegate: one-shot row action ──
-    component RowAction: PC.ItemDelegate {
-        id: rowDelegate
-        implicitHeight: 32
-        signal triggered()
-
-        required property string label
-
-        contentItem: PC.Label {
-            text: rowDelegate.label
-            verticalAlignment: Text.AlignVCenter
-            leftPadding: Kirigami.Units.mediumSpacing
-        }
-        onClicked: rowDelegate.triggered()
-    }
-
-    // ── Delegate: toggle row action (with checkbox) ──
-    component ToggleAction: PC.ItemDelegate {
-        id: toggleDelegate
-        implicitHeight: 32
-        signal triggered()
-
-        required property string label
-        property bool toggled: false
-
-        contentItem: RowLayout {
-            spacing: 0
-            PC.CheckBox {
-                checked: toggleDelegate.toggled
-                onToggled: toggleDelegate.triggered()
-            }
-            PC.Label {
-                Layout.fillWidth: true
-                text: toggleDelegate.label
-                verticalAlignment: Text.AlignVCenter
-            }
-        }
-        onClicked: toggleDelegate.triggered()
     }
 }
