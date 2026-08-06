@@ -48,20 +48,30 @@ PlasmoidItem {
 
     function appId() {
         if (!savedActiveTask || !savedActiveTask.valid) return ""
-        return tasksModel.data(savedActiveTask, TM.TasksModel.AppId) || ""
+        return tasksModel.data(savedActiveTask, TM.AbstractTasksModel.AppId) || ""
     }
+
+    // ── TEMP DEBUG (commented out — keep for reference) ──
+    // function debugSaved() {
+    //     if (!savedActiveTask || !savedActiveTask.valid) return "invalid/null"
+    //     return tasksModel.data(savedActiveTask, TM.TasksModel.AppId) + "|" + tasksModel.data(savedActiveTask, Qt.DisplayRole)
+    // }
+    // function debugKeepAbove() {
+    //     if (!savedActiveTask || !savedActiveTask.valid) return "invalid"
+    //     return "" + tasksModel.data(savedActiveTask, TM.AbstractTasksModel.IsKeepAbove)
+    // }
 
     // Map action id → AdditionalRoles enum value (-1 = one-shot, no checkbox)
     // Enum lookup lives in a function body — reliable QML context, unlike a
     // JS array literal.
     function roleFor(id) {
         switch (id) {
-            case "fullscreen":    return TM.TasksModel.IsFullScreen
-            case "keepAbove":     return TM.TasksModel.IsKeepAbove
-            case "keepBelow":     return TM.TasksModel.IsKeepBelow
-            case "shade":         return TM.TasksModel.IsShaded
-            case "noBorder":      return TM.TasksModel.HasNoBorder
-            case "excludeCapture":return TM.TasksModel.IsExcludedFromCapture
+            case "fullscreen":    return TM.AbstractTasksModel.IsFullScreen
+            case "keepAbove":     return TM.AbstractTasksModel.IsKeepAbove
+            case "keepBelow":     return TM.AbstractTasksModel.IsKeepBelow
+            case "shade":         return TM.AbstractTasksModel.IsShaded
+            case "noBorder":      return TM.AbstractTasksModel.HasNoBorder
+            case "excludeCapture":return TM.AbstractTasksModel.IsExcludedFromCapture
             default:              return -1
         }
     }
@@ -152,6 +162,14 @@ PlasmoidItem {
             opacity: 0.15
         }
 
+        // ── TEMP DEBUG (commented out — keep for reference) ──
+        // PC.Label {
+        //     width: parent.width
+        //     text: "v=" + root.modelVersion + " keepAbove=" + root.debugKeepAbove() + " sv=" + root.debugSaved()
+        //     font.pixelSize: 9
+        //     opacity: 0.7
+        // }
+
         // Action list — declarative, driven by the window's real state.
         // One-shot: PC.ItemDelegate (no checkbox)
         // Toggle:   PC.CheckDelegate (native Breeze checkbox + text)
@@ -193,14 +211,14 @@ PlasmoidItem {
             visible: parent.rowRole < 0
             anchors.fill: parent
             text: parent.actionDef.label
-            leftPadding: root.checkColW + Kirigami.Units.smallSpacing
             onClicked: parent.actionDef.run()
         }
-        // Toggle
+        // Toggle — LayoutMirroring moves the Breeze checkbox to the LEFT of the label
         PC.CheckDelegate {
             visible: parent.rowRole >= 0
             anchors.fill: parent
             text: parent.actionDef.label
+            LayoutMirroring.enabled: true
             checked: {
                 root.modelVersion  // re-evaluate on every window state change
                 var idx = root.savedActiveTask
