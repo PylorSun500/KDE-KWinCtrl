@@ -133,7 +133,7 @@ PlasmoidItem {
     // ── Full view ──
     fullRepresentation: Item {
         implicitWidth: 220
-        implicitHeight: headerRow.height + 1 + actionCol.height + 12
+        implicitHeight: headerRow.height + 1 + actionList.height + 12
 
         // Header
         RowLayout {
@@ -170,35 +170,40 @@ PlasmoidItem {
         //     opacity: 0.7
         // }
 
-        // Action list — declarative, driven by the window's real state.
-        // One-shot: PC.ItemDelegate (no checkbox)
-        // Toggle:   PC.CheckDelegate (native Breeze checkbox + text)
+        // Action list — official Plasma menu style (PC.MenuItem).
+        // One-shot: plain MenuItem (no checkbox)
+        // Toggle:   checkable MenuItem → Plasma CheckIndicator on the LEFT
         // checked binds to tasksModel.data() + root.modelVersion so the ONLY
         // thing that lights a checkbox is the window's actual state.
-        Column {
-            id: actionCol
+        //
+        // ListView replicates PC.Menu's alignment logic: `hasCheckables: true`
+        // makes every item reserve indicator width so text lines up.
+        ListView {
+            id: actionList
             anchors { left: parent.left; right: parent.right; top: sep.bottom }
+            height: contentHeight
+            interactive: false
+            property bool hasCheckables: true
+            property bool hasIcons: false
 
-            Repeater {
-                model: [
-                    { id: "close",    label: "关闭窗口", run: function(){ tasksModel.requestClose(root.savedActiveTask) } },
-                    { id: "minimize", label: "最小化",    run: function(){ tasksModel.requestToggleMinimized(root.savedActiveTask) } },
-                    { id: "maximize", label: "最大化",    run: function(){ tasksModel.requestToggleMaximized(root.savedActiveTask) } },
-                    { id: "fullscreen",    label: "全屏",                 run: function(){ tasksModel.requestToggleFullScreen(root.savedActiveTask) } },
-                    { id: "keepAbove",     label: "保持在其他窗口上方",    run: function(){ tasksModel.requestToggleKeepAbove(root.savedActiveTask) } },
-                    { id: "keepBelow",     label: "保持在底层",            run: function(){ tasksModel.requestToggleKeepBelow(root.savedActiveTask) } },
-                    { id: "shade",         label: "卷起",                  run: function(){ tasksModel.requestToggleShaded(root.savedActiveTask) } },
-                    { id: "noBorder",      label: "无边框",                run: function(){ tasksModel.requestToggleNoBorder(root.savedActiveTask) } },
-                    { id: "excludeCapture",label: "在截图与录屏中隐藏",    run: function(){ tasksModel.requestToggleExcludeFromCapture(root.savedActiveTask) } },
-                ]
-                delegate: ActionRow {}
-            }
+            model: [
+                { id: "close",    label: "关闭窗口", run: function(){ tasksModel.requestClose(root.savedActiveTask) } },
+                { id: "minimize", label: "最小化",    run: function(){ tasksModel.requestToggleMinimized(root.savedActiveTask) } },
+                { id: "maximize", label: "最大化",    run: function(){ tasksModel.requestToggleMaximized(root.savedActiveTask) } },
+                { id: "fullscreen",    label: "全屏",                 run: function(){ tasksModel.requestToggleFullScreen(root.savedActiveTask) } },
+                { id: "keepAbove",     label: "保持在其他窗口上方",    run: function(){ tasksModel.requestToggleKeepAbove(root.savedActiveTask) } },
+                { id: "keepBelow",     label: "保持在底层",            run: function(){ tasksModel.requestToggleKeepBelow(root.savedActiveTask) } },
+                { id: "shade",         label: "卷起",                  run: function(){ tasksModel.requestToggleShaded(root.savedActiveTask) } },
+                { id: "noBorder",      label: "无边框",                run: function(){ tasksModel.requestToggleNoBorder(root.savedActiveTask) } },
+                { id: "excludeCapture",label: "在截图与录屏中隐藏",    run: function(){ tasksModel.requestToggleExcludeFromCapture(root.savedActiveTask) } },
+            ]
+            delegate: ActionRow {}
         }
     }
 
-    // ── Delegate: one row per action ──
-    // rowRole < 0 → one-shot (ItemDelegate, no checkbox)
-    // rowRole ≥ 0 → toggle   (CheckDelegate, Breeze checkbox bound to window state)
+    // ── Delegate: one row per action, official Plasma menu style ──
+    // rowRole < 0 → one-shot (no checkbox)
+    // rowRole ≥ 0 → toggle   (checkbox bound to window state)
     component ActionRow: Item {
         width: parent ? parent.width : 0
         height: rowImpl.implicitHeight
@@ -206,25 +211,25 @@ PlasmoidItem {
         property int rowRole: root.roleFor(actionDef.id)  // -1 for one-shot
 
         // One-shot
-        PC.ItemDelegate {
+        PC.MenuItem {
             id: rowImpl
             visible: parent.rowRole < 0
-            anchors.fill: parent
+            width: parent.width
             text: parent.actionDef.label
             onClicked: parent.actionDef.run()
         }
-        // Toggle — LayoutMirroring moves the Breeze checkbox to the LEFT of the label
-        PC.CheckDelegate {
+        // Toggle — checkable MenuItem: Breeze hover border + left checkbox
+        PC.MenuItem {
             visible: parent.rowRole >= 0
-            anchors.fill: parent
+            width: parent.width
             text: parent.actionDef.label
-            LayoutMirroring.enabled: true
+            checkable: true
             checked: {
                 root.modelVersion  // re-evaluate on every window state change
                 var idx = root.savedActiveTask
                 return idx && idx.valid && tasksModel.data(idx, parent.rowRole) === true
             }
-            onToggled: parent.actionDef.run()
+            onClicked: parent.actionDef.run()
         }
     }
 }
