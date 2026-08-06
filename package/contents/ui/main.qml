@@ -26,6 +26,15 @@ PlasmoidItem {
 
     // ── Saved target window (captured before popup steals focus) ──
     property var savedActiveTask: null
+    readonly property int checkColW: 22  // checkbox indicator width for text alignment
+
+    // ── Reactive version counter ──
+    // tasksModel.data() is NOT reactive in QML bindings (the engine can't know
+    // when the model changes internally). We bump this counter on every
+    // dataChanged / activeTaskChanged so any binding that references it gets
+    // re-evaluated and reads the FRESH window state. This is what makes the
+    // checkboxes "window-driven": only the window's real state reaches them.
+    property int modelVersion: 0
 
     function isOn(role) {
         if (!savedActiveTask || !savedActiveTask.valid) return false
@@ -42,12 +51,42 @@ PlasmoidItem {
         return tasksModel.data(savedActiveTask, TM.TasksModel.AppId) || ""
     }
 
+    // Map action id → AdditionalRoles enum value (-1 = one-shot, no checkbox)
+    // Enum lookup lives in a function body — reliable QML context, unlike a
+    // JS array literal.
+    function roleFor(id) {
+        switch (id) {
+            case "fullscreen":    return TM.TasksModel.IsFullScreen
+            case "keepAbove":     return TM.TasksModel.IsKeepAbove
+            case "keepBelow":     return TM.TasksModel.IsKeepBelow
+            case "shade":         return TM.TasksModel.IsShaded
+            case "noBorder":      return TM.TasksModel.HasNoBorder
+            case "excludeCapture":return TM.TasksModel.IsExcludedFromCapture
+            default:              return -1
+        }
+    }
+
     function toggleExpand() {
         if (!expanded) {
             // Capture currently active window BEFORE popup steals focus
             savedActiveTask = tasksModel.activeTask
         }
         expanded = !expanded
+    }
+
+    // ── Track active window while popup is open ──
+    Connections {
+        target: tasksModel
+        function onDataChanged() {
+            // Window state changed (e.g. keepAbove toggled) → force re-read
+            root.modelVersion++
+        }
+        function onActiveTaskChanged() {
+            if (root.expanded && tasksModel.activeTask && tasksModel.activeTask.valid) {
+                root.savedActiveTask = tasksModel.activeTask
+            }
+            root.modelVersion++
+        }
     }
 
     // ── Compact view ──
@@ -113,87 +152,61 @@ PlasmoidItem {
             opacity: 0.15
         }
 
-        // Action list — vertical ToolButtons, same style as compact view
+        // Action list — declarative, driven by the window's real state.
+        // One-shot: PC.ItemDelegate (no checkbox)
+        // Toggle:   PC.CheckDelegate (native Breeze checkbox + text)
+        // checked binds to tasksModel.data() + root.modelVersion so the ONLY
+        // thing that lights a checkbox is the window's actual state.
         Column {
             id: actionCol
             anchors { left: parent.left; right: parent.right; top: sep.bottom }
 
-            PC.ToolButton {
-                width: parent.width
-                text: "关闭窗口"
-                icon.name: "window-close"
-                display: PC.ToolButton.TextBesideIcon
-                onClicked: tasksModel.requestClose(root.savedActiveTask)
+            Repeater {
+                model: [
+                    { id: "close",    label: "关闭窗口", run: function(){ tasksModel.requestClose(root.savedActiveTask) } },
+                    { id: "minimize", label: "最小化",    run: function(){ tasksModel.requestToggleMinimized(root.savedActiveTask) } },
+                    { id: "maximize", label: "最大化",    run: function(){ tasksModel.requestToggleMaximized(root.savedActiveTask) } },
+                    { id: "fullscreen",    label: "全屏",                 run: function(){ tasksModel.requestToggleFullScreen(root.savedActiveTask) } },
+                    { id: "keepAbove",     label: "保持在其他窗口上方",    run: function(){ tasksModel.requestToggleKeepAbove(root.savedActiveTask) } },
+                    { id: "keepBelow",     label: "保持在底层",            run: function(){ tasksModel.requestToggleKeepBelow(root.savedActiveTask) } },
+                    { id: "shade",         label: "卷起",                  run: function(){ tasksModel.requestToggleShaded(root.savedActiveTask) } },
+                    { id: "noBorder",      label: "无边框",                run: function(){ tasksModel.requestToggleNoBorder(root.savedActiveTask) } },
+                    { id: "excludeCapture",label: "在截图与录屏中隐藏",    run: function(){ tasksModel.requestToggleExcludeFromCapture(root.savedActiveTask) } },
+                ]
+                delegate: ActionRow {}
             }
-            PC.ToolButton {
-                width: parent.width
-                text: "最小化"
-                icon.name: "window-minimize"
-                display: PC.ToolButton.TextBesideIcon
-                onClicked: tasksModel.requestToggleMinimized(root.savedActiveTask)
-            }
-            PC.ToolButton {
-                width: parent.width
-                text: "最大化"
-                icon.name: "window-maximize"
-                display: PC.ToolButton.TextBesideIcon
-                onClicked: tasksModel.requestToggleMaximized(root.savedActiveTask)
-            }
+        }
+    }
 
-            PC.ToolButton {
-                width: parent.width
-                text: "全屏"
-                icon.name: "view-fullscreen"
-                display: PC.ToolButton.TextBesideIcon
-                checkable: true
-                checked: { root.savedActiveTask; return root.isOn(TM.TasksModel.IsFullScreen) }
-                onToggled: tasksModel.requestToggleFullScreen(root.savedActiveTask)
+    // ── Delegate: one row per action ──
+    // rowRole < 0 → one-shot (ItemDelegate, no checkbox)
+    // rowRole ≥ 0 → toggle   (CheckDelegate, Breeze checkbox bound to window state)
+    component ActionRow: Item {
+        width: parent ? parent.width : 0
+        height: rowImpl.implicitHeight
+        property var actionDef: modelData
+        property int rowRole: root.roleFor(actionDef.id)  // -1 for one-shot
+
+        // One-shot
+        PC.ItemDelegate {
+            id: rowImpl
+            visible: parent.rowRole < 0
+            anchors.fill: parent
+            text: parent.actionDef.label
+            leftPadding: root.checkColW + Kirigami.Units.smallSpacing
+            onClicked: parent.actionDef.run()
+        }
+        // Toggle
+        PC.CheckDelegate {
+            visible: parent.rowRole >= 0
+            anchors.fill: parent
+            text: parent.actionDef.label
+            checked: {
+                root.modelVersion  // re-evaluate on every window state change
+                var idx = root.savedActiveTask
+                return idx && idx.valid && tasksModel.data(idx, parent.rowRole) === true
             }
-            PC.ToolButton {
-                width: parent.width
-                text: "保持在其他窗口上方"
-                icon.name: "window-keep-above"
-                display: PC.ToolButton.TextBesideIcon
-                checkable: true
-                checked: { root.savedActiveTask; return root.isOn(TM.TasksModel.IsKeepAbove) }
-                onToggled: tasksModel.requestToggleKeepAbove(root.savedActiveTask)
-            }
-            PC.ToolButton {
-                width: parent.width
-                text: "保持在底层"
-                icon.name: "window-keep-below"
-                display: PC.ToolButton.TextBesideIcon
-                checkable: true
-                checked: { root.savedActiveTask; return root.isOn(TM.TasksModel.IsKeepBelow) }
-                onToggled: tasksModel.requestToggleKeepBelow(root.savedActiveTask)
-            }
-            PC.ToolButton {
-                width: parent.width
-                text: "卷起"
-                icon.name: "window-shade"
-                display: PC.ToolButton.TextBesideIcon
-                checkable: true
-                checked: { root.savedActiveTask; return root.isOn(TM.TasksModel.IsShaded) }
-                onToggled: tasksModel.requestToggleShaded(root.savedActiveTask)
-            }
-            PC.ToolButton {
-                width: parent.width
-                text: "无边框"
-                icon.name: "window-noborder"
-                display: PC.ToolButton.TextBesideIcon
-                checkable: true
-                checked: { root.savedActiveTask; return root.isOn(TM.TasksModel.HasNoBorder) }
-                onToggled: tasksModel.requestToggleNoBorder(root.savedActiveTask)
-            }
-            PC.ToolButton {
-                width: parent.width
-                text: "在截图与录屏中隐藏"
-                icon.name: "window-hide-capture"
-                display: PC.ToolButton.TextBesideIcon
-                checkable: true
-                checked: { root.savedActiveTask; return root.isOn(TM.TasksModel.IsExcludedFromCapture) }
-                onToggled: tasksModel.requestToggleExcludeFromCapture(root.savedActiveTask)
-            }
+            onToggled: parent.actionDef.run()
         }
     }
 }
