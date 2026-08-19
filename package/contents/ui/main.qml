@@ -169,14 +169,11 @@ PlasmoidItem {
         //     opacity: 0.7
         // }
 
-        // Action list — official Plasma menu style (PC.MenuItem).
-        // One-shot: plain MenuItem (no checkbox)
-        // Toggle:   checkable MenuItem → Plasma CheckIndicator on the LEFT
-        // checked binds to tasksModel.data() + root.modelVersion so the ONLY
-        // thing that lights a checkbox is the window's actual state.
-        //
-        // ListView replicates PC.Menu's alignment logic: `hasCheckables: true`
-        // makes every item reserve indicator width so text lines up.
+        // Action list — official Plasma menu style.
+        // delegate is a single PC.MenuItem (mirrors PC.Menu's own delegate),
+        // so ListView.view + hasCheckables alignment works natively.
+        // One-shot items are checkable=false; toggle items checkable=true,
+        // and BOTH reserve the indicator column so text lines up.
         ListView {
             id: actionList
             anchors { left: parent.left; right: parent.right; top: sep.bottom }
@@ -195,39 +192,19 @@ PlasmoidItem {
                 { id: "noBorder",      label: "无边框",                run: function(){ tasksModel.requestToggleNoBorder(root.savedActiveTask) } },
                 { id: "excludeCapture",label: "在截图与录屏中隐藏",    run: function(){ tasksModel.requestToggleExcludeFromCapture(root.savedActiveTask) } },
             ]
-            delegate: ActionRow {}
-        }
-    }
-
-    // ── Delegate: one row per action, official Plasma menu style ──
-    // rowRole < 0 → one-shot (no checkbox)
-    // rowRole ≥ 0 → toggle   (checkbox bound to window state)
-    component ActionRow: Item {
-        width: parent ? parent.width : 0
-        height: rowImpl.implicitHeight
-        property var actionDef: modelData
-        property int rowRole: root.roleFor(actionDef.id)  // -1 for one-shot
-
-        // One-shot
-        PC.MenuItem {
-            id: rowImpl
-            visible: parent.rowRole < 0
-            width: parent.width
-            text: parent.actionDef.label
-            onClicked: parent.actionDef.run()
-        }
-        // Toggle — checkable MenuItem: Breeze hover border + left checkbox
-        PC.MenuItem {
-            visible: parent.rowRole >= 0
-            width: parent.width
-            text: parent.actionDef.label
-            checkable: true
-            checked: {
-                root.modelVersion  // re-evaluate on every window state change
-                var idx = root.savedActiveTask
-                return idx && idx.valid && tasksModel.data(idx, parent.rowRole) === true
+            delegate: PC.MenuItem {
+                width: actionList.width
+                text: modelData.label
+                checkable: root.roleFor(modelData.id) >= 0
+                checked: {
+                    var role = root.roleFor(modelData.id)
+                    if (role < 0) return false
+                    root.modelVersion  // re-evaluate on every window state change
+                    var idx = root.savedActiveTask
+                    return idx && idx.valid && tasksModel.data(idx, role) === true
+                }
+                onClicked: modelData.run()
             }
-            onClicked: parent.actionDef.run()
         }
     }
 }
