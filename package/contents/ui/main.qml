@@ -69,7 +69,6 @@ PlasmoidItem {
             case "fullscreen":    return TM.AbstractTasksModel.IsFullScreen
             case "keepAbove":     return TM.AbstractTasksModel.IsKeepAbove
             case "keepBelow":     return TM.AbstractTasksModel.IsKeepBelow
-            case "shade":         return TM.AbstractTasksModel.IsShaded
             case "noBorder":      return TM.AbstractTasksModel.HasNoBorder
             case "excludeCapture":return TM.AbstractTasksModel.IsExcludedFromCapture
             default:              return -1
@@ -133,7 +132,7 @@ PlasmoidItem {
     // ── Full view ──
     fullRepresentation: Item {
         implicitWidth: 220
-        implicitHeight: headerRow.height + 1 + actionList.height + 12
+        implicitHeight: headerRow.height + 8 + 1 + actionList.height + 12
 
         // Header
         RowLayout {
@@ -156,7 +155,7 @@ PlasmoidItem {
         // Separator
         Rectangle {
             id: sep
-            anchors { left: parent.left; right: parent.right; top: headerRow.bottom }
+            anchors { left: parent.left; right: parent.right; top: headerRow.bottom; topMargin: 8 }
             height: 1
             color: Kirigami.Theme.textColor
             opacity: 0.15
@@ -193,7 +192,6 @@ PlasmoidItem {
                 { id: "fullscreen",    label: "全屏",                 run: function(){ tasksModel.requestToggleFullScreen(root.savedActiveTask) } },
                 { id: "keepAbove",     label: "保持在其他窗口上方",    run: function(){ tasksModel.requestToggleKeepAbove(root.savedActiveTask) } },
                 { id: "keepBelow",     label: "保持在底层",            run: function(){ tasksModel.requestToggleKeepBelow(root.savedActiveTask) } },
-                { id: "shade",         label: "卷起",                  run: function(){ tasksModel.requestToggleShaded(root.savedActiveTask) } },
                 { id: "noBorder",      label: "无边框",                run: function(){ tasksModel.requestToggleNoBorder(root.savedActiveTask) } },
                 { id: "excludeCapture",label: "在截图与录屏中隐藏",    run: function(){ tasksModel.requestToggleExcludeFromCapture(root.savedActiveTask) } },
             ]
