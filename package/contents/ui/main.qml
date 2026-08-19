@@ -46,9 +46,9 @@ PlasmoidItem {
         return tasksModel.data(savedActiveTask, Qt.DisplayRole) || ""
     }
 
-    function appId() {
-        if (!savedActiveTask || !savedActiveTask.valid) return ""
-        return tasksModel.data(savedActiveTask, TM.AbstractTasksModel.AppId) || ""
+    function windowIcon() {
+        if (!savedActiveTask || !savedActiveTask.valid) return null
+        return tasksModel.data(savedActiveTask, Qt.DecorationRole)
     }
 
     // ── TEMP DEBUG (commented out — keep for reference) ──
@@ -144,7 +144,7 @@ PlasmoidItem {
 
             Kirigami.Icon {
                 Layout.preferredWidth: 22; Layout.preferredHeight: 22
-                source: root.appId()
+                source: root.windowIcon()
             }
             PC.Label {
                 Layout.fillWidth: true
