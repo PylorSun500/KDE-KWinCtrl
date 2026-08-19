@@ -180,21 +180,22 @@ PlasmoidItem {
             height: contentHeight
             interactive: false
             property bool hasCheckables: true
-            property bool hasIcons: false
+            property bool hasIcons: true
 
             model: [
-                { id: "close",    label: "关闭窗口", run: function(){ tasksModel.requestClose(root.savedActiveTask) } },
-                { id: "minimize", label: "最小化",    run: function(){ tasksModel.requestToggleMinimized(root.savedActiveTask) } },
-                { id: "maximize", label: "最大化",    run: function(){ tasksModel.requestToggleMaximized(root.savedActiveTask) } },
-                { id: "fullscreen",    label: "全屏",                 run: function(){ tasksModel.requestToggleFullScreen(root.savedActiveTask) } },
-                { id: "keepAbove",     label: "保持在其他窗口上方",    run: function(){ tasksModel.requestToggleKeepAbove(root.savedActiveTask) } },
-                { id: "keepBelow",     label: "保持在底层",            run: function(){ tasksModel.requestToggleKeepBelow(root.savedActiveTask) } },
-                { id: "noBorder",      label: "无边框",                run: function(){ tasksModel.requestToggleNoBorder(root.savedActiveTask) } },
-                { id: "excludeCapture",label: "在截图与录屏中隐藏",    run: function(){ tasksModel.requestToggleExcludeFromCapture(root.savedActiveTask) } },
+                { id: "close",    label: "关闭窗口", icon: "window-close",     run: function(){ tasksModel.requestClose(root.savedActiveTask) } },
+                { id: "minimize", label: "最小化",    icon: "window-minimize",  run: function(){ tasksModel.requestToggleMinimized(root.savedActiveTask) } },
+                { id: "maximize", label: "最大化",    icon: "window-maximize",  run: function(){ tasksModel.requestToggleMaximized(root.savedActiveTask) } },
+                { id: "fullscreen",    label: "全屏",                 icon: "view-fullscreen",     run: function(){ tasksModel.requestToggleFullScreen(root.savedActiveTask) } },
+                { id: "keepAbove",     label: "保持在其他窗口上方",    icon: "window-keep-above",   run: function(){ tasksModel.requestToggleKeepAbove(root.savedActiveTask) } },
+                { id: "keepBelow",     label: "保持在底层",            icon: "window-keep-below",   run: function(){ tasksModel.requestToggleKeepBelow(root.savedActiveTask) } },
+                { id: "noBorder",      label: "无边框",                icon: "cards-block",         run: function(){ tasksModel.requestToggleNoBorder(root.savedActiveTask) } },
+                { id: "excludeCapture",label: "在截图与录屏中隐藏",    icon: "view-private",        run: function(){ tasksModel.requestToggleExcludeFromCapture(root.savedActiveTask) } },
             ]
             delegate: PC.MenuItem {
                 width: actionList.width
                 text: modelData.label
+                icon.name: modelData.icon
                 checkable: root.roleFor(modelData.id) >= 0
                 checked: {
                     var role = root.roleFor(modelData.id)
